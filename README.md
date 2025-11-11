@@ -1,6 +1,16 @@
 # MathSE ✨ Self-Evolution + Reflection SFT
 
+<p align="center">
+  <img src="Figs/Logo.png" alt="MathSE Logo" width="320">
+</p>
+
 `MathSE` (AAAI 2026) is a three-stage training pipeline that iteratively upgrades multimodal math models through GPT-4o knowledge distillation, self-evolving data collection, and reflection with Outcome Reward Model (ORM) feedback. This repository is the official implementation of *"MathSE: Improving Multimodal Mathematical Reasoning via Self-Evolving Iterative Reflection and Reward-Guided Fine-Tuning."*
+
+---
+
+## News
+
+- **2025-11-11** – MathSE codebase is officially open-sourced! 🚀
 
 ---
 
@@ -12,13 +22,13 @@
 - **Process:** We fine-tune CogVLM2 / Qwen2-VL-7B / InternVL2.5-8B on the distilled subset to produce `M0`, ensuring the model starts from high-quality reasoning patterns.
 
 ### Stage 2 ♻️ Iterative Self-Evolving
-- **Entry point:** `main.py --stage evolve`.
-- **Goal:** Harvest additional supervision by letting `M_i` solve the remaining MathVL samples (`D_remain`) and filtering them with ORM.
-- **Loop:** For each configured round (Algorithm 1):
-  1. The **latest** checkpoint runs inference via `llamafactory.chat.ChatModel` (configured under the `inference` block) on a batch sampled from `D_remain` to produce reasoning traces `R_gen`.
-  2. **ORM feedback:** accepts `R_correct`, logging `(prompt, input media, reasoning)` into `sft_chosen.jsonl`, and pushes mistakes plus diagnostics into the hard buffer. Incorrect items cycle back into `D_remain` for the next round.
-  3. Update datasets: `D_SFT ← D_SFT ∪ R_correct`, refresh `D_remain`, and rewrite the LLaMA-Factory dataset (`mathse_stage_final.json`).
-  4. (Optional) Re-train `M_{i+1}` with the expanded dataset via LLaMA-Factory before the next round.
+- **Entry point:** main.py --stage evolve.
+- **Goal:** Harvest additional supervision by letting M_i solve the remaining MathVL samples (D_remain) and filtering them with ORM.
+- **Loop:** For each configured round (Algorithm 1):
+  1. The **latest** checkpoint runs inference via llamafactory.chat.ChatModel (configured under the inference block) on a batch sampled from D_remain to produce reasoning traces R_gen.
+  2. **ORM feedback:** accepts R_correct, logging (prompt, input media, reasoning) into sft_chosen.jsonl, and pushes mistakes plus diagnostics into the hard buffer. Incorrect items cycle back into D_remain for the next round.
+  3. Update datasets: D_SFT = D_SFT U R_correct, refresh D_remain, and rewrite the LLaMA-Factory dataset (mathse_stage_final.json).
+  4. Re-train M_{i+1} by launching llamafactory-cli train on the updated dataset (if 	rain_each_round is enabled) and reload the inference engine with the newly produced checkpoint.
 - **Outcome:** After ~240K accepted samples we obtain a much stronger evolving model while caching all incorrect cases for reflection.
 
 ### Stage 3 💡 Reflection + Reward-Guided SFT
@@ -85,8 +95,8 @@
 
 | Stage | Command | Description |
 | --- | --- | --- |
-| Stage 1 Distillation | `./run_phase1_sft.sh --stage distill` | Fine-tunes the base model on GPT-4o distilled data and stores `output/sft_model_stage0/`. |
-| Stage 2 Self-Evolving | `./run_phase1_sft.sh --stage evolve` | Runs the iterative loop, updates `output/sft_model_final/`, `output/hard_problems.jsonl`, and accumulates `output/sft_{chosen,rejected}.jsonl`. |
+| Stage 1 Distillation | `python main.py distill --config config.yaml` | Prepares the Stage 1 dataset (`mathse_stage0.json`) and (optionally) launches a base SFT run. |
+| Stage 2 Self-Evolving | `python main.py evolve --config config.yaml` | Iterative inference → ORM filtering → dataset refresh, optionally triggering full SFT after every round. |
 | Reflection Prep | `python prepare_reflection_data.py --config config.yaml` | Replays drafts, calls GPT-4o with ORM diagnostics, and writes `output/reflection_sft.jsonl`. |
 | Stage 3 Reflection SFT | `./run_phase2_reflection_sft.sh` | Generates the reflection dataset and launches `llamafactory-cli train` for full-parameter SFT (no LoRA) on top of the Stage 2 checkpoint. |
 | Full Pipeline | `./run_full_pipeline.sh` | Convenience entry to execute Stage 1 -> Stage 2 -> Reflection prep -> Stage 3 in sequence. |
