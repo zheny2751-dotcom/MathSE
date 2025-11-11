@@ -1,7 +1,6 @@
 # MathSE ✨ Self-Evolution + Reflection SFT
 
-`MathSE` (AAAI 2026) is a three-stage training pipeline that iteratively upgrades multimodal math models through GPT-4o knowledge distillation, self-evolving data collection, and reflection with Outcome Reward Model (ORM) feedback. It mirrors the method described in the paper *“MathSE: Improving Multimodal Mathematical Reasoning via Self-Evolving Iterative Reflection and Reward-Guided Fine-Tuning.”*  
-➡️ Implementation tasks live in `plan.md`; this README stays user-facing.
+`MathSE` (AAAI 2026) is a three-stage training pipeline that iteratively upgrades multimodal math models through GPT-4o knowledge distillation, self-evolving data collection, and reflection with Outcome Reward Model (ORM) feedback. This repository is the official implementation of *"MathSE: Improving Multimodal Mathematical Reasoning via Self-Evolving Iterative Reflection and Reward-Guided Fine-Tuning."*
 
 ---
 
